@@ -14,7 +14,7 @@ class UserFixtures extends Fixture
             [
                 'walletAddress' => '0xADMIN1234ABCD',
                 'username' => 'AdminMaster',
-                'role' => 'admin',
+                'roles' => ['admin'],
                 'userToken' => 'token-admin-xyz',
                 'network' => 'ETH',
                 'solBalance' => '0.00000000',
@@ -24,7 +24,7 @@ class UserFixtures extends Fixture
             [
                 'walletAddress' => '0xFREELANCE5678EFG',
                 'username' => 'FreeLanceJoe',
-                'role' => 'freelance',
+                'roles' => ['freelance'],
                 'userToken' => 'token-free-123',
                 'network' => 'SOL',
                 'solBalance' => '45.23000000',
@@ -34,7 +34,7 @@ class UserFixtures extends Fixture
             [
                 'walletAddress' => '0xEMPLOYEUR9876HIJ',
                 'username' => 'BossMan',
-                'role' => 'employeur',
+                'roles' => ['employeur'],
                 'userToken' => 'token-boss-abc',
                 'network' => 'ETH',
                 'solBalance' => '0.00000000',
@@ -44,7 +44,7 @@ class UserFixtures extends Fixture
             [
                 'walletAddress' => '0xDAO0011223344',
                 'username' => 'DaoCentral',
-                'role' => 'DAO',
+                'roles' => ['dao'],
                 'userToken' => 'token-dao-xyz',
                 'network' => 'SOL',
                 'solBalance' => '1000.00000000',
@@ -54,10 +54,14 @@ class UserFixtures extends Fixture
         ];
 
         foreach ($usersData as $data) {
-            $user = new User();
+            // ✅ Vérifie si l'utilisateur existe déjà
+            $user = $manager->getRepository(User::class)->findOneBy([
+                'walletAddress' => $data['walletAddress'],
+            ]) ?? new User();
+
             $user->setWalletAddress($data['walletAddress']);
             $user->setUsername($data['username']);
-            $user->setRole($data['role']);
+            $user->setRoles($data['roles']); // ✅ tableau
             $user->setUserToken($data['userToken']);
             $user->setNetwork($data['network']);
             $user->setSolBalance($data['solBalance']);
