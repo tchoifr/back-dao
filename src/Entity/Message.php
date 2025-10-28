@@ -4,52 +4,54 @@ namespace App\Entity;
 
 use App\Repository\MessageRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
 class Message
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    private ?Uuid $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Conversation::class, inversedBy: 'messages')]
-    private ?Conversation $conversation = null;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    private ?User $sender = null;
 
-    // ✅ On renomme la colonne pour éviter le mot réservé SQL
-    #[ORM\Column(name: 'sender_from', length: 20)]
-    private string $from; // 'freelancer' ou 'employer'
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    private ?User $receiver = null;
 
     #[ORM\Column(type: 'text')]
-    private string $text;
+    private ?string $content = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
-    private \DateTimeImmutable $createdAt;
-
-    #[ORM\Column]
-    private bool $readByEmployer = false;
+    #[ORM\Column(type: 'boolean')]
+    private bool $isRead = false;
 
     #[ORM\Column]
-    private bool $readByFreelancer = false;
+    private ?\DateTimeImmutable $createdAt = null;
 
-    // Getters & Setters
-    public function getId(): ?int { return $this->id; }
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
-    public function getConversation(): ?Conversation { return $this->conversation; }
-    public function setConversation(?Conversation $conversation): self { $this->conversation = $conversation; return $this; }
+    // ---- Getters & Setters ----
+    public function getId(): ?Uuid { return $this->id; }
 
-    public function getFrom(): string { return $this->from; }
-    public function setFrom(string $from): self { $this->from = $from; return $this; }
+    public function getSender(): ?User { return $this->sender; }
+    public function setSender(?User $sender): static { $this->sender = $sender; return $this; }
 
-    public function getText(): string { return $this->text; }
-    public function setText(string $text): self { $this->text = $text; return $this; }
+    public function getReceiver(): ?User { return $this->receiver; }
+    public function setReceiver(?User $receiver): static { $this->receiver = $receiver; return $this; }
 
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
-    public function setCreatedAt(\DateTimeImmutable $createdAt): self { $this->createdAt = $createdAt; return $this; }
+    public function getContent(): ?string { return $this->content; }
+    public function setContent(string $content): static { $this->content = $content; return $this; }
 
-    public function isReadByEmployer(): bool { return $this->readByEmployer; }
-    public function setReadByEmployer(bool $readByEmployer): self { $this->readByEmployer = $readByEmployer; return $this; }
+    public function isRead(): bool { return $this->isRead; }
+    public function setIsRead(bool $isRead): static { $this->isRead = $isRead; return $this; }
 
-    public function isReadByFreelancer(): bool { return $this->readByFreelancer; }
-    public function setReadByFreelancer(bool $readByFreelancer): self { $this->readByFreelancer = $readByFreelancer; return $this; }
+    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
 }

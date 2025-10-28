@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -24,10 +26,10 @@ class User implements UserInterface
     private ?string $username = null;
 
     #[ORM\Column(type: Types::JSON)]
-    private array $roles = []; // ✅ un seul champ, au pluriel
+    private array $roles = [];
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $userToken = null; // 🔐 pour stocker le JWT si besoin
+    private ?string $userToken = null;
 
     #[ORM\Column(length: 20)]
     private ?string $network = null;
@@ -47,10 +49,19 @@ class User implements UserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    // 💬 Relations avec Message
+    #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Message::class, orphanRemoval: true)]
+    private Collection $messagesSent;
+
+    #[ORM\OneToMany(mappedBy: 'receiver', targetEntity: Message::class, orphanRemoval: true)]
+    private Collection $messagesReceived;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->roles = ['freelance']; // rôle par défaut
+        $this->roles = ['freelance'];
+        $this->messagesSent = new ArrayCollection();
+        $this->messagesReceived = new ArrayCollection();
     }
 
     // --- Getters & Setters ---
@@ -107,7 +118,67 @@ class User implements UserInterface
     public function getUpdatedAt(): ?\DateTimeImmutable { return $this->updatedAt; }
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static { $this->updatedAt = $updatedAt; return $this; }
 
-    // --- UserInterface (pour JWT et sécurité Symfony) ---
+    // --- Relations Message ---
+
+    /**
+     * @return Collection<int, Message>
+     */
+    public function getMessagesSent(): Collection
+    {
+        return $this->messagesSent;
+    }
+
+    public function addMessagesSent(Message $message): static
+    {
+        if (!$this->messagesSent->contains($message)) {
+            $this->messagesSent->add($message);
+            $message->setSender($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessagesSent(Message $message): static
+    {
+        if ($this->messagesSent->removeElement($message)) {
+            if ($message->getSender() === $this) {
+                $message->setSender(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Message>
+     */
+    public function getMessagesReceived(): Collection
+    {
+        return $this->messagesReceived;
+    }
+
+    public function addMessagesReceived(Message $message): static
+    {
+        if (!$this->messagesReceived->contains($message)) {
+            $this->messagesReceived->add($message);
+            $message->setReceiver($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessagesReceived(Message $message): static
+    {
+        if ($this->messagesReceived->removeElement($message)) {
+            if ($message->getReceiver() === $this) {
+                $message->setReceiver(null);
+            }
+        }
+
+        return $this;
+    }
+
+    // --- UserInterface ---
     public function getUserIdentifier(): string { return $this->walletAddress ?? ''; }
     public function eraseCredentials(): void {}
 }
