@@ -2,40 +2,37 @@
 
 namespace App\Service;
 
-use App\Dto\CreateJobDto;
-use App\Entity\Job;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\User;
+use App\Dto\JobDto;
+use App\Repository\JobRepository;
 
 class JobService
 {
-    public function __construct(
-        private EntityManagerInterface $em,
-        private UserRepository $userRepo
-    ) {}
+    public function __construct(private JobRepository $jobRepository) {}
 
-    public function createJobFromDto(CreateJobDto $dto): Job
+    public function getJobsForUser(User $user): array
     {
-        $recruiter = $this->userRepo->find($dto->recruiterId);
-        if (!$recruiter) {
-            throw new \RuntimeException('Recruiter not found');
+        $roles = $user->getRoles();
+        $isAdmin = in_array('admin', $roles, true);
+        $isDao = in_array('dao', $roles, true);
+        $isFreelance = in_array('freelance', $roles, true);
+        $isEmployer = in_array('employer', $roles, true);
+
+        if ($isAdmin || $isDao) {
+            $jobs = $this->jobRepository->findAll();
+            return array_map(fn($j) => JobDto::forAdmin($j)->toArray(), $jobs);
         }
 
-        $job = new Job();
-        $job
-            ->setRecruiter($recruiter)
-            ->setTitle($dto->title)
-            ->setDescription($dto->description ?? '')
-            ->setCategory($dto->category)
-            ->setDuration($dto->duration)
-            ->setSkills($dto->skills)
-            ->setBudget($dto->budget ?? '0')
-            ->setCurrency($dto->currency ?? 'WORK')
-            ->setStatus($dto->status ?? 'open');
+        if ($isEmployer) {
+            $jobs = $this->jobRepository->findBy(['recruiter' => $user]);
+            return array_map(fn($j) => JobDto::forEmployer($j)->toArray(), $jobs);
+        }
 
-        $this->em->persist($job);
-        $this->em->flush();
+        if ($isFreelance) {
+            $jobs = $this->jobRepository->findBy(['status' => 'open']);
+            return array_map(fn($j) => JobDto::forFreelance($j)->toArray(), $jobs);
+        }
 
-        return $job;
+        return [];
     }
 }

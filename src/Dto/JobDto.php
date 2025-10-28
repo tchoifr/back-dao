@@ -16,11 +16,10 @@ class JobDto implements \JsonSerializable
     public string $currency;
     public string $status;
     public string $createdAt;
-    public ?string $updatedAt;
-    public string $recruiterId;
+    public ?string $recruiterId;
     public ?string $recruiterUsername;
 
-    public static function fromEntity(Job $job): self
+    public static function forFreelance(Job $job): self
     {
         $dto = new self();
         $dto->id = (string) $job->getId();
@@ -33,14 +32,31 @@ class JobDto implements \JsonSerializable
         $dto->currency = $job->getCurrency();
         $dto->status = $job->getStatus();
         $dto->createdAt = $job->getCreatedAt()->format('Y-m-d H:i:s');
-        $dto->updatedAt = $job->getUpdatedAt()?->format('Y-m-d H:i:s');
         $dto->recruiterId = (string) $job->getRecruiter()?->getId();
         $dto->recruiterUsername = $job->getRecruiter()?->getUsername();
+        return $dto;
+    }
 
+    public static function forEmployer(Job $job): self
+    {
+        $dto = self::forFreelance($job);
+        // Ajoute plus tard : candidats, stats, etc.
+        return $dto;
+    }
+
+    public static function forAdmin(Job $job): self
+    {
+        $dto = self::forEmployer($job);
+        // Ajoute plus tard : infos internes
         return $dto;
     }
 
     public function jsonSerialize(): array
+    {
+        return get_object_vars($this);
+    }
+
+    public function toArray(): array
     {
         return get_object_vars($this);
     }
