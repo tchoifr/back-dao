@@ -9,7 +9,7 @@ class UserDto implements \JsonSerializable
     public string $id;
     public ?string $walletAddress;
     public ?string $username;
-    public ?string $role;
+    public array $roles;
     public ?string $network;
     public ?string $solBalance;
     public ?string $ethBalance;
@@ -23,7 +23,7 @@ class UserDto implements \JsonSerializable
         $dto->id = (string) $user->getId();
         $dto->walletAddress = $user->getWalletAddress();
         $dto->username = $user->getUsername();
-        $dto->role = $user->getRole();
+        $dto->roles = $user->getRoles();
         $dto->network = $user->getNetwork();
         $dto->solBalance = $user->getSolBalance();
         $dto->ethBalance = $user->getEthBalance();

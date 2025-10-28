@@ -2,82 +2,58 @@
 
 namespace App\Controller;
 
-use App\Entity\Job;
-use App\Repository\UserRepository;
+use App\Dto\CreateJobDto;
+use App\Dto\JobDto;
+use App\Service\JobService;
 use App\Repository\JobRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/jobs', name: 'api_jobs_')]
 class JobApiController extends AbstractController
 {
+    public function __construct(
+        private readonly JobService $jobService
+    ) {}
+
     #[Route('', name: 'create', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepo): JsonResponse
+    public function create(Request $request, ValidatorInterface $validator): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
-        if (!$data || !isset($data['recruiterId'])) {
-            return $this->json(['error' => 'Missing recruiterId'], 400);
+        if (!is_array($data)) {
+            return $this->json(['error' => 'Invalid JSON'], 400);
         }
 
-        $recruiter = $userRepo->find($data['recruiterId']);
-        if (!$recruiter) {
-            return $this->json(['error' => 'Recruiter not found'], 404);
+        $dto = CreateJobDto::fromArray($data);
+
+        $errors = $validator->validate($dto);
+        if (count($errors) > 0) {
+            $messages = [];
+            foreach ($errors as $error) {
+                $messages[$error->getPropertyPath()] = $error->getMessage();
+            }
+            return $this->json(['errors' => $messages], 400);
         }
 
-        $job = new Job();
-        $job->setRecruiter($recruiter);
-        $job->setTitle($data['title'] ?? 'Sans titre');
-        $job->setDescription($data['description'] ?? '');
-        $job->setBudget($data['budget'] ?? '0');
-        $job->setCurrency($data['currency'] ?? 'WORK');
-        $job->setStatus($data['status'] ?? 'open');
-        $job->setCategory($data['category'] ?? null);
-        $job->setDuration($data['duration'] ?? null);
-        $job->setSkills($data['skills'] ?? []);
+        try {
+            $job = $this->jobService->createJobFromDto($dto);
+        } catch (\RuntimeException $e) {
+            return $this->json(['error' => $e->getMessage()], 404);
+        }
 
-        $em->persist($job);
-        $em->flush();
-
-        return $this->json([
-            'id' => $job->getId(),
-            'title' => $job->getTitle(),
-            'description' => $job->getDescription(),
-            'budget' => $job->getBudget(),
-            'currency' => $job->getCurrency(),
-            'status' => $job->getStatus(),
-            'category' => $job->getCategory(),
-            'duration' => $job->getDuration(),
-            'skills' => $job->getSkills(),
-            'createdAt' => $job->getCreatedAt()->format('Y-m-d H:i:s'),
-            'recruiterId' => $recruiter->getId(),
-            'recruiterUsername' => $recruiter->getUsername(),
-        ], 201);
+        return $this->json(JobDto::fromEntity($job), 201);
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(JobRepository $jobRepo): JsonResponse
     {
         $jobs = $jobRepo->findAll();
+        $dtos = array_map(fn($job) => JobDto::fromEntity($job), $jobs);
 
-        $data = array_map(fn(Job $job) => [
-            'id' => $job->getId(),
-            'title' => $job->getTitle(),
-            'description' => $job->getDescription(),
-            'budget' => $job->getBudget(),
-            'currency' => $job->getCurrency(),
-            'status' => $job->getStatus(),
-            'category' => $job->getCategory(),
-            'duration' => $job->getDuration(),
-            'skills' => $job->getSkills(),
-            'createdAt' => $job->getCreatedAt()->format('Y-m-d H:i:s'),
-            'recruiterId' => $job->getRecruiter()?->getId(),
-            'recruiterUsername' => $job->getRecruiter()?->getUsername(),
-        ], $jobs);
-
-        return $this->json($data);
+        return $this->json($dtos);
     }
 }

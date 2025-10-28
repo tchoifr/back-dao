@@ -6,39 +6,33 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateUserDto
 {
-    #[Assert\Uuid]
-    public ?string $id = null;
+    #[Assert\NotBlank(message: "Le walletAddress est requis.")]
+    public ?string $walletAddress = null;
 
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
-    public string $walletAddress;
-
-    #[Assert\Length(max: 100)]
+    #[Assert\NotBlank(message: "Le username est requis.")]
     public ?string $username = null;
 
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 20)]
-    public string $role;
+    #[Assert\NotBlank(message: "Le réseau est requis.")]
+    public ?string $network = null;
 
-    #[Assert\Length(max: 255)]
-    public ?string $userToken = null;
+    #[Assert\Type('array')]
+    #[Assert\NotBlank(message: "Au moins un rôle est requis.")]
+    public array $roles = [];
 
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 20)]
-    public string $network;
-
-    #[Assert\Type('numeric')]
     public ?string $solBalance = null;
-
-    #[Assert\Type('numeric')]
     public ?string $ethBalance = null;
-
-    #[Assert\Type('numeric')]
     public ?string $workBalance = null;
 
-    #[Assert\DateTime]
-    public ?string $createdAt = null;
-
-    #[Assert\DateTime]
-    public ?string $updatedAt = null;
+    public static function fromArray(array $data): self
+    {
+        $dto = new self();
+        $dto->walletAddress = $data['walletAddress'] ?? null;
+        $dto->username = $data['username'] ?? null;
+        $dto->network = $data['network'] ?? null;
+        $dto->roles = $data['roles'] ?? [];
+        $dto->solBalance = $data['solBalance'] ?? '0';
+        $dto->ethBalance = $data['ethBalance'] ?? '0';
+        $dto->workBalance = $data['workBalance'] ?? '0';
+        return $dto;
+    }
 }

@@ -10,6 +10,7 @@
         "doctrine/doctrine-bundle": "^3.0",
         "doctrine/doctrine-migrations-bundle": "^3.5",
         "doctrine/orm": "^3.5",
+        "lexik/jwt-authentication-bundle": "^3.1",
         "nelmio/cors-bundle": "^2.6",
         "symfony/console": "7.3.*",
         "symfony/doctrine-bridge": "7.3.*",
@@ -21,6 +22,7 @@
         "symfony/runtime": "7.3.*",
         "symfony/serializer": "7.3.*",
         "symfony/uid": "7.3.*",
+        "symfony/validator": "7.3.*",
         "symfony/yaml": "7.3.*"
     },
     "config": {

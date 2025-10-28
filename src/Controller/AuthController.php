@@ -29,13 +29,15 @@ class AuthController extends AbstractController
             return $this->json(['exists' => false]);
         }
 
+        // 🔐 Ici, on pourra plus tard générer un JWT
+        // pour l’instant, on retourne les infos utilisateur
         return $this->json([
             'exists' => true,
             'user' => [
-                'id' => $user->getId(),
+                'id' => (string) $user->getId(),
                 'walletAddress' => $user->getWalletAddress(),
                 'username' => $user->getUsername(),
-                'role' => $user->getRole(),
+                'roles' => $user->getRoles(),
                 'network' => $user->getNetwork(),
                 'solBalance' => $user->getSolBalance(),
                 'ethBalance' => $user->getEthBalance(),
@@ -52,22 +54,27 @@ class AuthController extends AbstractController
 
         $walletAddress = $data['walletAddress'] ?? null;
         $username = $data['username'] ?? null;
-        $role = $data['role'] ?? null;
+        $roles = $data['roles'] ?? null;
 
-        if (!$walletAddress || !$username || !$role) {
-            return $this->json(['error' => 'Champs manquants : walletAddress, username ou role.'], 400);
+        if (!$walletAddress || !$username || !$roles) {
+            return $this->json(['error' => 'Champs manquants : walletAddress, username ou roles.'], 400);
         }
 
-        // Vérifier si le wallet existe déjà
+        if (!is_array($roles)) {
+            return $this->json(['error' => 'Le champ roles doit être un tableau (ex: ["admin"]).'], 400);
+        }
+
+        // 🚫 Vérifier si le wallet existe déjà
         if ($userRepository->findOneBy(['walletAddress' => $walletAddress])) {
             return $this->json(['error' => 'Ce wallet existe déjà.'], 400);
         }
 
+        // 🧱 Création de l'utilisateur
         $user = new User();
         $user->setWalletAddress($walletAddress);
         $user->setUsername($username);
-        $user->setRole($role);
-        $user->setNetwork(str_starts_with($walletAddress, '0x') ? 'Ethereum' : 'Solana');
+        $user->setRoles($roles);
+        $user->setNetwork(str_starts_with($walletAddress, '0x') ? 'ethereum' : 'solana');
         $user->setSolBalance('0');
         $user->setEthBalance('0');
         $user->setWorkBalance('0');
@@ -76,18 +83,18 @@ class AuthController extends AbstractController
         $em->flush();
 
         return $this->json([
-            'message' => 'Utilisateur créé avec succès',
+            'message' => '✅ Utilisateur créé avec succès',
             'user' => [
-                'id' => $user->getId(),
+                'id' => (string) $user->getId(),
                 'walletAddress' => $user->getWalletAddress(),
                 'username' => $user->getUsername(),
-                'role' => $user->getRole(),
+                'roles' => $user->getRoles(),
                 'network' => $user->getNetwork(),
                 'solBalance' => $user->getSolBalance(),
                 'ethBalance' => $user->getEthBalance(),
                 'workBalance' => $user->getWorkBalance(),
                 'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
             ]
-        ]);
+        ], 201);
     }
 }
