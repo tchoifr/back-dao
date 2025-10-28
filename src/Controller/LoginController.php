@@ -12,28 +12,39 @@ use Symfony\Component\Routing\Annotation\Route;
 class LoginController extends AbstractController
 {
     #[Route('/login', name: 'api_login', methods: ['POST'])]
-    public function login(Request $request, UserRepository $userRepository): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-        $walletAddress = $data['walletAddress'] ?? null;
+public function login(Request $request, UserRepository $userRepository): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
+    $walletAddress = $data['walletAddress'] ?? null;
 
-        if (!$walletAddress) {
-            return $this->json(['error' => 'Wallet address required'], 400);
-        }
-
-        $user = $userRepository->findOneBy(['walletAddress' => $walletAddress]);
-
-        if (!$user) {
-            return $this->json(['error' => 'User not found'], 404);
-        }
-
-        // Tu pourrais générer un token JWT ici pour plus tard
-        return $this->json([
-            'uuid' => $user->getId(),
-            'username' => $user->getUsername(),
-            'role' => $user->getRole(),
-            'walletAddress' => $user->getWalletAddress(),
-            'createdAt' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
-        ]);
+    if (!$walletAddress) {
+        return $this->json(['error' => 'Wallet address required'], 400);
     }
+
+    // ✅ Normalisation : on met tout en minuscule
+    $walletAddress = strtolower(trim($walletAddress));
+
+    // ✅ Recherche insensible à la casse
+    $user = $userRepository->createQueryBuilder('u')
+        ->where('LOWER(u.walletAddress) = :wallet')
+        ->setParameter('wallet', $walletAddress)
+        ->getQuery()
+        ->getOneOrNullResult();
+
+    if (!$user) {
+        return $this->json(['exists' => false]);
+    }
+
+    return $this->json([
+        'exists' => true,
+        'user' => [
+            'uuid' => (string) $user->getId(),
+            'username' => $user->getUsername(),
+            'roles' => $user->getRoles(),
+            'walletAddress' => $user->getWalletAddress(),
+            'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
+        ]
+    ]);
+}
+
 }
