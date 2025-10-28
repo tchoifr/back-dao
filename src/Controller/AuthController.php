@@ -13,7 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 #[Route('/api', name: 'api_')]
 class AuthController extends AbstractController
 {
-    #[Route('/login', name: 'api_login', methods: ['POST'])]
+    #[Route('/login', name: 'login', methods: ['POST'])]
     public function login(Request $request, UserRepository $userRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -25,12 +25,12 @@ class AuthController extends AbstractController
 
         $user = $userRepository->findOneBy(['walletAddress' => $walletAddress]);
 
+        // 🟠 Si l’utilisateur n’existe pas encore → front affichera le formulaire de création
         if (!$user) {
             return $this->json(['exists' => false]);
         }
 
-        // 🔐 Ici, on pourra plus tard générer un JWT
-        // pour l’instant, on retourne les infos utilisateur
+        // 🟢 Si trouvé → on renvoie les infos de session utilisateur
         return $this->json([
             'exists' => true,
             'user' => [
@@ -47,34 +47,43 @@ class AuthController extends AbstractController
         ]);
     }
 
-    #[Route('/register', name: 'api_register', methods: ['POST'])]
+    #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
         $walletAddress = $data['walletAddress'] ?? null;
         $username = $data['username'] ?? null;
-        $roles = $data['roles'] ?? null;
+        $role = $data['role'] ?? null;
 
-        if (!$walletAddress || !$username || !$roles) {
-            return $this->json(['error' => 'Champs manquants : walletAddress, username ou roles.'], 400);
+        if (!$walletAddress || !$username || !$role) {
+            return $this->json(['error' => 'Champs manquants : walletAddress, username ou role.'], 400);
         }
 
-        if (!is_array($roles)) {
-            return $this->json(['error' => 'Le champ roles doit être un tableau (ex: ["admin"]).'], 400);
-        }
-
-        // 🚫 Vérifier si le wallet existe déjà
+        // 🔍 Vérifie si le wallet existe déjà
         if ($userRepository->findOneBy(['walletAddress' => $walletAddress])) {
             return $this->json(['error' => 'Ce wallet existe déjà.'], 400);
         }
 
-        // 🧱 Création de l'utilisateur
+        // 🧱 Création du user
         $user = new User();
         $user->setWalletAddress($walletAddress);
         $user->setUsername($username);
-        $user->setRoles($roles);
-        $user->setNetwork(str_starts_with($walletAddress, '0x') ? 'ethereum' : 'solana');
+
+        // ⚙️ Normalisation des rôles
+        $normalizedRole = match (strtolower($role)) {
+            'freelance' => 'freelance',
+            'recruteur', 'employer' => 'employer',
+            'admin' => 'admin',
+            default => 'freelance'
+        };
+        $user->setRoles([$normalizedRole]);
+
+        // 🔗 Détecte la blockchain selon le wallet
+        $network = str_starts_with($walletAddress, '0x') ? 'Ethereum' : 'Solana';
+        $user->setNetwork($network);
+
+        // 💰 Initialisation des soldes
         $user->setSolBalance('0');
         $user->setEthBalance('0');
         $user->setWorkBalance('0');
@@ -83,7 +92,7 @@ class AuthController extends AbstractController
         $em->flush();
 
         return $this->json([
-            'message' => '✅ Utilisateur créé avec succès',
+            'message' => 'Utilisateur créé avec succès',
             'user' => [
                 'id' => (string) $user->getId(),
                 'walletAddress' => $user->getWalletAddress(),
