@@ -31,10 +31,10 @@ class MessageService
 {
     return $this->messageRepository->findConversation($u1, $u2);
 }
-    public function getInbox(User $receiver): array
-    {
-    return $this->messageRepository->findReceivedMessages($receiver);
-    }
+    public function getInbox(User $user): array
+{
+    return $this->messageRepository->findInboxMessages($user);
+}
 
 public function save(Message $message): void
 {

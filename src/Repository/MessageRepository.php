@@ -38,15 +38,16 @@ public function findConversation(User $user1, User $user2): array
     /**
      * Retourne tous les messages reçus par un utilisateur
      */
-    public function findReceivedMessages(User $receiver): array
-    {
-        return $this->createQueryBuilder('m')
-            ->andWhere('m.receiver = :receiver')
-            ->setParameter('receiver', $receiver)
-            ->orderBy('m.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
-    }
+public function findInboxMessages(User $user): array
+{
+    return $this->createQueryBuilder('m')
+        ->where('m.sender = :userId OR m.receiver = :userId')
+        ->setParameter('userId', $user->getId(), 'uuid')
+        ->orderBy('m.createdAt', 'DESC')
+        ->getQuery()
+        ->getResult();
+}
+
 
     public function findLatestMessagesPerSender(User $receiver): array
 {
