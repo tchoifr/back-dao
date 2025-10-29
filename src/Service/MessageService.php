@@ -33,7 +33,7 @@ class MessageService
 }
     public function getInbox(User $receiver): array
     {
-        return $this->messageRepository->findReceivedMessages($receiver->getId());
+    return $this->messageRepository->findReceivedMessages($receiver);
     }
 
 public function save(Message $message): void
