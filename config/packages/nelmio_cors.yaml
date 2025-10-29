@@ -1,10 +1,6 @@
 nelmio_cors:
     defaults:
-        allow_origin: [
-            'http://localhost:5173',
-            'https://workdao.netlify.app',
-            '^https?://.*\.koyeb\.app$'
-        ]
+        allow_origin: ['^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$', '^https://workdao\.netlify\.app$']
         allow_credentials: true
         allow_headers: ['Content-Type', 'Authorization']
         expose_headers: ['Link']
@@ -13,12 +9,8 @@ nelmio_cors:
 
     paths:
         '^/':
-            allow_origin: [
-                'http://localhost:5173',
-                'https://workdao.netlify.app',
-                '^https?://.*\.koyeb\.app$'
-            ]
-            allow_methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
-            allow_headers: ['Content-Type', 'Authorization']
+            allow_origin: ['^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$', '^https://workdao\.netlify\.app$']
             allow_credentials: true
+            allow_headers: ['Content-Type', 'Authorization']
+            allow_methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
             max_age: 3600
