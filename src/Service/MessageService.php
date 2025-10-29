@@ -47,5 +47,28 @@ public function delete(Message $message): void
     $this->em->remove($message);
     $this->em->flush();
 }
+public function countUnreadMessages(User $user): int
+{
+    return $this->messageRepository->count([
+        'receiver' => $user,
+        'isRead' => false,
+    ]);
+}
+
+public function markConversationAsRead(User $currentUser, User $otherUser): void
+{
+    $messages = $this->messageRepository->findBy([
+        'sender' => $otherUser,
+        'receiver' => $currentUser,
+        'isRead' => false,
+    ]);
+
+    foreach ($messages as $msg) {
+        $msg->setIsRead(true);
+    }
+
+    $this->em->flush();
+}
+
 
 }

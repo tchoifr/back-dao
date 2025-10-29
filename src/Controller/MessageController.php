@@ -58,11 +58,15 @@ class MessageController extends AbstractController
             return $this->json(['error' => 'Utilisateur introuvable'], 404);
         }
 
+        // ✅ Marque la conversation comme lue
+        $this->messageService->markConversationAsRead($u1, $u2);
+
         $messages = $this->messageService->getConversation($u1, $u2);
         $dtos = array_map(fn($m) => new MessageDTO($m), $messages);
 
         return $this->json($dtos);
     }
+
 
     /**
      * 📥 Récupérer la boîte de réception d’un utilisateur
@@ -99,6 +103,25 @@ class MessageController extends AbstractController
 
         return $this->json(new MessageDTO($message));
     }
+
+        /**
+     * 🔔 Compter les messages non lus d’un utilisateur
+     */
+    #[Route('/unread/{userId}', name: 'message_unread', methods: ['GET'])]
+    public function getUnreadCount(string $userId): JsonResponse
+    {
+        $user = $this->userRepository->find($userId);
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], 404);
+        }
+
+        $count = $this->messageService->countUnreadMessages($user);
+        return $this->json(['unreadCount' => $count]);
+    }
+
+
+
 
     /**
      * 🗑️ Supprimer un message
