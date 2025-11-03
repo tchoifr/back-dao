@@ -1,16 +1,25 @@
 nelmio_cors:
     defaults:
+<<<<<<< HEAD
         allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://workdao.netlify.app']
         allow_credentials: true
         allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
+=======
+        allow_origin: ['*']
+        allow_credentials: true
+        allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+>>>>>>> 2445c89916b65e751b42ef4a5707e91b9947c324
         expose_headers: ['Link']
         allow_methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
         max_age: 3600
-
     paths:
+<<<<<<< HEAD
         '^/':
             allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://workdao.netlify.app']
             allow_credentials: true
             allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
             allow_methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
             max_age: 3600
+=======
+        '^/': ~
+>>>>>>> 2445c89916b65e751b42ef4a5707e91b9947c324
