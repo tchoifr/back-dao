@@ -1,0 +1,1 @@
+(Get-Content -Raw public\index.php) -replace '\r','?' -replace '\n','?'
